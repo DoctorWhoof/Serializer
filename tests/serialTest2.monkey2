@@ -1,6 +1,6 @@
 Namespace test2
 
-#Import "../serialize"
+#Import "../serializer"
 
 'IMPORTANT! Always set the reflection filters for the desired namespaces
 #Reflect test2..

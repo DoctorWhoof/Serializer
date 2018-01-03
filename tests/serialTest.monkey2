@@ -1,7 +1,7 @@
 Namespace test1
 
 #Import "<std>"
-#Import "../serialize"
+#Import "../serializer"
 
 'IMPORTANT! Always set the reflection filters for the desired namespaces
 #Reflect test1..
