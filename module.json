@@ -1,0 +1,7 @@
+{
+	"module":"serializer",
+	"about":"General purpose serialization/deserialization to .json files",
+	"author":"Leo Santos",
+	"version":"1.0.0",
+	"depends":["std","mojo","mojo3d","reflection"]
+}
