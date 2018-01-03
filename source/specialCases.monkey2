@@ -1,5 +1,7 @@
 Namespace std.Json
 
+'WIP. Unfinished. Not used yet.
+
 Class SpecialCases
 	
 	Global classes := New String[]( "std.graphics.Color" )
