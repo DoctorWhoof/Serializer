@@ -1,10 +1,12 @@
 Namespace test2
 
 #Import "../serializer"
+#Import "<mojo3d>"
 
 'IMPORTANT! Always set the reflection filters for the desired namespaces
 #Reflect test2..
 #Reflect std.graphics..
+#Reflect mojo3d..
 
 Public
 Function Main()
