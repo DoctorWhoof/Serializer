@@ -72,7 +72,7 @@ Class KnightWhoSaysNi
 		_color = c
 	End
 	
-	Property Style:FightStyle()	'Not serializable yet!
+	Property Style:FightStyle()
 		Return _style
 	Setter( f:FightStyle )
 		_style = f
@@ -118,7 +118,7 @@ Struct NonsenseStruct
 End
 
 
-Enum FightStyle	'Not serializable yet!
+Enum FightStyle
 	Full,
 	Armless,
 	Legless

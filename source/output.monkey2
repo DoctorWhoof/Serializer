@@ -72,7 +72,8 @@ End
 Function SerializeDecls:JsonObject( type:TypeInfo, instance:Variant )
 	Local newObj:= New JsonObject
 	newObj.SetString( "Class", type.Name )
-
+	
+'	Print type
 	Assert( type.Name <> "Void", "~nSerialize Error: Class not reflectable.~nMake sure you include all necessary namespaces using #Reflect filters~n")
 	
 	For Local decl:DeclInfo = Eachin type.GetDecls()
@@ -80,6 +81,7 @@ Function SerializeDecls:JsonObject( type:TypeInfo, instance:Variant )
 			If decl.Type.Name.Slice( 0, 7 ) = "Unknown"
 				Prompt( "Warning: Property " + decl.Name + " cannot be reflected and can't be serialized." )
 			Else
+'				Print "~t" + decl
 				newObj.Serialize( decl.Name, decl.Get( instance ) )
 				Prompt( decl.Name + "=" + VariantToString( decl.Get( instance ) ) )
 			End
