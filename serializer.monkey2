@@ -8,11 +8,15 @@ Namespace std.Json
 #Import "source/output"
 #Import "source/variant_ext"
 
+#Import "extensions/Color"
+'#Import "extensions/Vec3f"
+
 Using std..
 Using mojo..
 
-Global verbose := False
 Global customArraySerializer:CustomArraySerializer
+
+'**********************************************************************************
 
 Class JsonValue Extension
 	
@@ -30,8 +34,37 @@ Class JsonValue Extension
 		
 End
 
+'**********************************************************************************
 
 Class JsonObject Extension
+	
+	Public
+	Method Serialize( key:String, v:Variant )
+		
+		Local value := JsonValueFromVariant( v )
+
+		If value.IsNumber
+			SetNumber( key, value.ToNumber() )
+		Elseif value.IsString
+			SetString( key, value.ToString() )
+		Elseif value.IsBool
+			SetBool( key, value.ToBool() )
+		Elseif value.IsObject
+			SetObject( key, value.ToObject() )
+		ElseIf value.IsArray
+			SetArray( key, value.ToArray() )
+		End
+	End
+	
+	
+	Method Deserialize()
+		If Not Empty
+			For Local key := Eachin Self.ToObject().Keys
+				LoadFromJsonObject( Self[ key ].ToObject(), Null, Null )
+			Next
+		End
+	End
+	
 	
 	Method Merge( json:JsonObject )
 		Local otherMap := json.ToObject()
@@ -52,47 +85,18 @@ Class JsonObject Extension
 		Next
 	End
 	
-	
+	Private
+	'Allows serialization without setting a key. For internal use only.
 	Method Serialize( v:Variant )
 		Local value := Cast<JsonObject>( JsonValueFromVariant( v ) )
 		Merge( value )
 	End
 	
-	
-	Method Serialize( key:String, v:Variant )
-		Local value := JsonValueFromVariant( v )
-
-		If value.IsNumber
-			SetNumber( key, value.ToNumber() )
-		Elseif value.IsString
-			SetString( key, value.ToString() )
-		Elseif value.IsBool
-			SetBool( key, value.ToBool() )
-		Elseif value.IsObject
-			SetObject( key, value.ToObject() )
-		ElseIf value.IsArray
-			SetArray( key, value.ToArray() )
-		End
-	End
-	
-	
-	Method Deserialize()
-		If Not Empty
-			For Local key := EachIn Self.ToObject().Keys
-				Prompt( key )
-				LoadFromJsonObject( Self[ key ].ToObject(), Null, Null )
-			Next
-		End
-	End
-	
 End
 
+'**********************************************************************************
 
-Function Prompt( text:String )
-	If verbose Print text
-End
-
-
+'This class needs to be implemented per app in order to provide support for object arrays. Need to find better solution in the future.
 Class CustomArraySerializer Abstract
 
 	Method Serialize:JsonArray( v:Variant ) Virtual

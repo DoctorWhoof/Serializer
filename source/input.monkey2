@@ -15,7 +15,19 @@ Function BasicDeserialize:Variant( obj:StringMap<JsonValue>, constructorArgTypes
 	If obj["Class"]
 	 	Local objClass:= obj["Class"].ToString()
 		Local info := TypeInfo.GetType( objClass )
+		Local info_ext := TypeInfo.GetType( objClass + " Extension" )
+		
+		If info_ext
+			If info_ext.GetDecl( "Deserialize" )
+				Return CustomDeserialize( info_ext, New JsonObject( obj ), Null, Null )
+			End
+		End
+		
 		If info
+			If info.GetDecl( "Deserialize" )
+				Return CustomDeserialize( info, New JsonObject( obj ), Null, Null )
+			End
+			
 			Local constructor := info.GetDecl( "New" )
 			If constructor
 				v = constructor.Invoke( Null, Null )
@@ -25,11 +37,16 @@ Function BasicDeserialize:Variant( obj:StringMap<JsonValue>, constructorArgTypes
 					v = constructor.Invoke( Null, arguments )
 				Else
 					Print( "Deserialize: Error, Invalid constructor arguments type or arguments." )
+					Print( "Class " + info.Name + " may need a custom Deserializer. These are the available declarations:" )
+					For Local dec := Eachin info.GetDecls()
+						Print "~t" + dec
+					Next
 				End
 			End
 		Else
 			Print( "Deserialize: Class " + objClass + " not found." )
 		End
+		
 	End
 	
 	If v = Null Then Print( "Deserialize: Nothing to return." )
@@ -39,32 +56,103 @@ End
 
 'Creates a new object, then loads its properties with optional filtering.
 Function LoadFromJsonObject:Variant( obj:StringMap<JsonValue>, include:StringStack = Null, exclude:StringStack = Null )
+
+	Assert( obj <> Null	, "~nDeserialize Error: Nothing to deserialize. Ensure 'First level' json entries are Objects~n" )
 	
 	Local v := BasicDeserialize( obj )
 	Local info := v.DynamicType
 	
-	Assert( info.Kind <> "Void", "~nDeserialize Error: Invalid Class? (Hint: Is the required class source file properly imported?~n" )
-				
-	For Local key := EachIn obj.Keys
+	Assert( info <> "Void", "Deserialize Error: Invalid Class (Hint: Is the required class source file properly reflected?~n" )
+	
+	Print info
+	If info.GetDecl( "Deserialize") Then Return v
+	
+	Local info_ext := TypeInfo.GetType( info.Name + " Extension")
+	If info_ext
+		If info_ext.GetDecl( "Deserialize") Then Return v
+	End
+	
+	
+	For Local key := Eachin obj.Keys
 		If key = "Class" Continue
+
 		If include
 			If Not include.Empty
 				If Not include.Contains( key ) Continue	
 			End
 		End
+		
 		If exclude
 			If Not exclude.Empty
 				If exclude.Contains( key ) Continue
 			End
 		End
 		
-		Local d:= info.GetDecl( key )
+		'Check for custom deserializer
+		Local d:= FindDecl( key, info )
+		Assert( d, "~nDeserializer: Can't find declaration name '" + key + "'. Ensure custom deserializer is working properly.")
+		
+		If d.Type.Kind = "Class" Or d.Type.Kind = "Struct"		
+			Local d_ext := TypeInfo.GetType( d.Type.Name + " Extension" )
+			If d_ext
+				If d_ext.GetDecl( "Deserialize" )
+					CustomDeserialize( d_ext, obj[key], d, v  )
+					Continue
+				End
+			End
+			
+			If d.Type.GetDecl( "Deserialize" )
+				CustomDeserialize( d.Type, obj[key], d, v )
+				Continue
+			End
+		End
+		
+		'If no custom serialization found, Applies value
 		Local value := LoadFromJsonValue( v, obj[key], d )
-		Prompt( key + " = " + VariantToString( value ) )
+
 	Next
 	
 	Return v
 
+End
+
+
+Function CustomDeserialize:Variant( type:TypeInfo, json:JsonValue, d:DeclInfo, owner:Variant )
+	Local v:Variant
+	Local deserialize := type.GetDecl( "Deserialize" )
+
+	If deserialize
+		v = deserialize.Invoke( Null, New Variant[]( Variant (json) ) )
+	End
+	
+	If Not v Then Print ("Serializer: Custom deserializer fail, nothing to return.")
+	If( d And v )Then d.Set( owner, v )
+
+	Return v
+End
+
+
+Function FindDecl:DeclInfo( name:String, type:TypeInfo )
+	Local d:DeclInfo
+	
+	Local type_ext := TypeInfo.GetType( type.Name + " Extension" )
+	If type_ext
+		d = type_ext.GetDecl( name )	
+	End
+	If Not d
+		d = type.GetDecl( name )
+		If Not d
+			If type.SuperType
+				If Not d
+					d = FindDecl( name, type.SuperType )
+				End
+			Else
+				Return Null	
+			End
+		End
+	End
+	
+	Return d
 End
 
 
@@ -86,7 +174,7 @@ Function GetPropertiesFromJsonObject( target:Variant, json:JsonObject, include:S
 		End
 		If ( d.Kind = "Property" And d.Settable ) Or ( d.Kind = "Field" And Not d.Name.StartsWith("_") )
 			Local value := LoadFromJsonValue( target, json.GetValue( d.Name ), d )
-			Prompt( d.Name + " = " + VariantToString( value ) )
+'			Print( d.Name + " = " + VariantToString( value ) )
 		End
 		
 	Next
@@ -94,18 +182,29 @@ End
 
 
 'loads a single value into an existing object.
-Function LoadFromJsonValue:Variant( v:Variant, valueName:String, jsonValue:JsonValue )
-	Local info := v.DynamicType
-	Local d:= info.GetDecl( valueName )
-	Local value := LoadFromJsonValue( v, jsonValue, d )
-	Return v
-End
+'Function LoadFromJsonValue:Variant( v:Variant, valueName:String, jsonValue:JsonValue )
+'	Local info := v.DynamicType
+'	Local d:= info.GetDecl( valueName )
+'	Local value := LoadFromJsonValue( v, jsonValue, d )
+'	Return v
+'End
 
 
 'Our main workhorse, recursively loads a properly cast JasonValue into an object's Declaration.
 Function LoadFromJsonValue:Variant( v:Variant, value:JsonValue, d:DeclInfo )	
 	Local newVar:Variant
 	If Not value Return Null
+	
+	'Special case for Enums
+	If d
+		If d.Type.Kind = "Enum"
+			newVar = Variant( d.Type.MakeEnum( value.ToInt() ) )
+			d.Set( v,newVar )
+			Return newVar
+		End
+	End
+	
+	'Everything else...
 	If value.IsNumber	
 		newVar = Variant( value.ToNumber() )
 		If d And v
@@ -128,7 +227,7 @@ Function LoadFromJsonValue:Variant( v:Variant, value:JsonValue, d:DeclInfo )
 	ElseIf value.IsBool
 		newVar = Variant( value.ToBool() )
 		If d And v Then d.Set( v, newVar )
-	ElseIf value.IsObject
+	Elseif value.IsObject
 		newVar = LoadFromJsonObject( value.ToObject() )
 		If d And v Then d.Set( v, newVar )
 	ElseIf value.IsArray
@@ -150,7 +249,7 @@ Function LoadFromJsonValue:Variant( v:Variant, value:JsonValue, d:DeclInfo )
 				newVar = customArraySerializer.Deserialize( jsonArr )
 			End
 			
-			d.Set( v, newVar )
+			If d And v Then d.Set( v, newVar )
 		End
 	End
 	

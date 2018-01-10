@@ -1,0 +1,16 @@
+
+- Wait for Struct constructor reflection bug, update examples when fixed.
+
+- Implement Serializer methods in more class extensions (Material, Texture)
+
+- Maybe wrap generic classes like vectors into serializable classes?
+
+
+Done!
+
+- Deserializer with extensions (search for Deserialize() method)
+	-WIP: Finish CustomDeserializer
+	
+- Serialize enums
+	-Test matLab editor to see if TextureFlags still crashes
+	- Deserialize Enums

@@ -1,28 +1,52 @@
 Namespace test2
 
 #Import "../serializer"
-#Import "<mojo3d>"
 
 'IMPORTANT! Always set the reflection filters for the desired namespaces
 #Reflect test2..
-#Reflect std.graphics..
-#Reflect mojo3d..
+#Reflect std..
 
 Public
 Function Main()
+	
+	Local t := New Test
+	For Local d := Eachin Variant( t ).Type.GetDecls()
+		Print "~t" + d
+	Next
+	
 	Local json := New JsonObject()
 	json.Serialize( "text","Just a little text" )
 	json.Serialize( "number", 100.0 )
 	json.Serialize( "isItTrue?", False )
-	json.Serialize( "Knight1", New KnightWhoSaysNi )
+	json.Serialize( "Knight1", New Knight )
 	json.Serialize( "Knight2", New AnotherKnight )
 	json.Serialize( "KnightStruct", New NonsenseStruct )
 	Print json.ToJson()
+	
+	Knight.all.Clear()
+	
+	json.Deserialize()
+	
 End
+
+Class Test
+	
+	Field a:Int
+	Field b:String
+	
+	Method Show()
+		Print a + b
+	End	
+	
+End
+
 
 '***************** Test classes and structs *****************
 
-Class KnightWhoSaysNi
+Class Knight
+	
+	Global all:= New Stack<Knight>
+	
 	Protected
 	Field _name := "Ni!"
 	Field _health:Float = 1000.0
@@ -30,10 +54,11 @@ Class KnightWhoSaysNi
 	Field _nonsense:= New NonsenseStruct
 	Field _color := New Color( 0, 0, 1, 1 )
 	Field _position := New Vec3f( 5, 0, 1 )
-	Field _style := FightStyle.Full
+	Field _style := FightStyle.Legless
 	
 	Public
 	Method New()
+		all.Add( Self )
 	End
 	
 	Property Health:Float()
@@ -61,9 +86,9 @@ Class KnightWhoSaysNi
 	End
 	
 	Property Position:Float[]()
-		Return New Float[]( _position.X, _position.Y, _position.Z )
+		Return _position.ToArray()
 	Setter( p:Float[] )
-		_position = New Vec3f( p[0], p[1], p[2] )
+		_position.FromArray( p )
 	End
 	
 	Property Color:Color()
@@ -81,7 +106,7 @@ Class KnightWhoSaysNi
 End
 
 
-Class AnotherKnight Extends KnightWhoSaysNi
+Class AnotherKnight Extends Knight
 	
 	Method New()
 		Super.New()
@@ -107,13 +132,17 @@ End
 
 Struct NonsenseStruct
 	Private
-	Field _words:= "Ekke Ekke Ekke Ekke Ptang Zoo Boing!"
+	Field _words:String
 	
 	Public
 	Property Words:String()
 		Return _words
 	Setter( w:String )
 		_words = w
+	End
+	
+	Method New()
+		_words = "Ekke Ekke Ekke Ekke Ptang Zoo Boing!"
 	End
 End
 
