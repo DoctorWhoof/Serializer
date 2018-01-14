@@ -25,6 +25,7 @@ Function Main()
 	
 	Knight.all.Clear()
 	
+	
 	json.Deserialize()
 	
 End
@@ -59,6 +60,7 @@ Class Knight
 	Public
 	Method New()
 		all.Add( Self )
+		Print "New Knight!"
 	End
 	
 	Property Health:Float()
@@ -85,9 +87,9 @@ Class Knight
 		_nonsense = n
 	End
 	
-	Property Position:Float[]()
+	Property Position:Double[]()
 		Return _position.ToArray()
-	Setter( p:Float[] )
+	Setter( p:Double[] )
 		_position.FromArray( p )
 	End
 	
@@ -144,6 +146,21 @@ Struct NonsenseStruct
 	Method New()
 		_words = "Ekke Ekke Ekke Ekke Ptang Zoo Boing!"
 	End
+	
+	Method Serialize:JsonObject()
+		Local obj:= New JsonObject
+		obj.SetString("Class", Typeof( Self ).Name )
+		obj.SetString("Words", Words )
+		Return obj
+	End
+	
+	Function Deserialize:NonsenseStruct( json:JsonValue )
+		Local obj:= Cast<JsonObject>( json )
+		Local ns := New NonsenseStruct
+		ns.Words = obj["Words"].ToString()
+		Return ns
+	End	
+	
 End
 
 

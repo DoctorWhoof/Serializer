@@ -10,11 +10,6 @@ Public
 Function Main()
 	
 	'Serialize objects to json object
-	
-	Local test := Variant( Height.Giant )
-	Print test.EnumValue
-	
-	
 	Local json := New JsonObject()
 	
 	Local obj0 := New Peasant

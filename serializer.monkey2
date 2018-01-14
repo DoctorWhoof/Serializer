@@ -6,10 +6,10 @@ Namespace std.Json
 
 #Import "source/input"
 #Import "source/output"
-#Import "source/variant_ext"
 
 #Import "extensions/Color"
-'#Import "extensions/Vec3f"
+#Import "extensions/Vec3f"
+#Import "source/Variant"
 
 Using std..
 Using mojo..
@@ -60,9 +60,14 @@ Class JsonObject Extension
 	Method Deserialize()
 		If Not Empty
 			For Local key := Eachin Self.ToObject().Keys
-				LoadFromJsonObject( Self[ key ].ToObject(), Null, Null )
+				If Self[ key ].IsObject
+					LoadFromJsonObject( Self[ key ].ToObject(), Null, Null )
+				Else
+					Local value := LoadFromJsonValue( Null, Self[key], Null )
+				End
 			Next
 		End
+
 	End
 	
 	

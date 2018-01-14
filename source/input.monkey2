@@ -57,14 +57,18 @@ End
 'Creates a new object, then loads its properties with optional filtering.
 Function LoadFromJsonObject:Variant( obj:StringMap<JsonValue>, include:StringStack = Null, exclude:StringStack = Null )
 
-	Assert( obj <> Null	, "~nDeserialize Error: Nothing to deserialize. Ensure 'First level' json entries are Objects~n" )
-	
 	Local v := BasicDeserialize( obj )
-	Local info := v.DynamicType
+	
+	Local info:TypeInfo
+	If v.Type.Kind = "Struct"
+		info = v.Type
+	Else
+		info = v.DynamicType
+	End
 	
 	Assert( info <> "Void", "Deserialize Error: Invalid Class (Hint: Is the required class source file properly reflected?~n" )
 	
-	Print info
+'	Print info
 	If info.GetDecl( "Deserialize") Then Return v
 	
 	Local info_ext := TypeInfo.GetType( info.Name + " Extension")
