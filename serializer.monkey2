@@ -9,7 +9,7 @@ Namespace std.Json
 
 #Import "extensions/Color"
 #Import "extensions/Vec3f"
-#Import "source/Variant"
+#Import "extensions/Variant"
 
 Using std..
 Using mojo..
