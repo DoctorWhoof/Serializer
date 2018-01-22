@@ -6,8 +6,24 @@ Namespace test2
 #Reflect test2..
 #Reflect std..
 
+#Import "<mojo>"
+#Reflect mojo..
+
+Using mojo..
+
 Public
 Function Main()
+	
+	Local value :Texture = Null
+	
+	Local test := Variant( value )
+	
+	If test
+		Print test.Type	'Seems like we have a value!!
+		
+		Local newValue := Cast<Texture>( test )
+		If newValue Then Print newValue.Width	'Uh, nope!
+	End
 	
 	'Serialize objects to json object
 	Local json := New JsonObject()
@@ -16,7 +32,8 @@ Function Main()
 	
 	Local obj1 := New Knight
 	obj1.height = Height.Giant
-	obj1.color = Color.Blue
+'	obj1.color = Color.Blue
+	obj1.color = Null
 	
 	Local obj2 := New King
 	obj2.height = Height.Dwarf

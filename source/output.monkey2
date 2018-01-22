@@ -11,6 +11,8 @@ Using mojo..
 Function JsonValueFromVariant:JsonValue( v:Variant )
 	Local newValue:JsonValue
 	Local info:= v.Type
+	
+	If v = Null Return Null
 
 	If info.Kind.StartsWith( "Unknown" )
 		Print( "Warning: Property cannot be reflected and can't be serialized." )
@@ -52,6 +54,7 @@ Function JsonValueFromVariant:JsonValue( v:Variant )
 			
 			If info.Kind="Class" Or info.Kind="Interface"	'If a value is returned by the function SerializeClass, it means a "Serialize()" method was found and returned a JsonValue
 				
+				Print v.DynamicType
 				Local dynamicValue := SerializeClass( v.DynamicType, v, obj )
 				If dynamicValue Then Return dynamicValue
 				
@@ -86,6 +89,9 @@ Function SerializeClass:JsonValue( c:TypeInfo, v:Variant, obj:JsonObject )
 	Local json:JsonValue
 
 	'Gets superclass decls first. Recursive.
+'	Print c.Name
+	If c.Name.StartsWith("Unknown") Return Null
+	
 	If c.SuperType
 		json = SerializeClass( c.SuperType, v, obj )
 	End
@@ -128,8 +134,30 @@ Function SerializeDecls:JsonObject( type:TypeInfo, instance:Variant )
 			If decl.Type.Name.StartsWith("Unknown")
 				Print( "Serializer: Property " + decl.Name + " is not reflected and can't be serialized. Use #Reflect filters on all desired namespaces." )
 			Else
-				obj.Serialize( decl.Name, decl.Get( instance ) )
-'				Print( decl.Name + "=" + VariantToString( decl.Get( instance ) ) )
+'				Print "~t" + decl + "; " + instance.Type
+				
+				Local value := decl.Get( instance )
+				
+				Print "variant = " + value.Type
+				
+				If value <> Null
+'					DebugStop()
+					Print "~t" + decl
+					obj.Serialize( decl.Name, value )
+				End
+				
+'				If decl.Type.Kind = "Enum"
+''					newValue = New JsonNumber( v.EnumValue )
+'					Local value := decl.Get( instance )
+'					If  value
+'						obj.SetNumber( decl.Name, decl.Get( instance ).EnumValue )
+'					Else
+'						obj.SetNumber( decl.Name, Null )
+'					End
+'				Else
+'					Print decl.Name + "; " + decl.Type.Name + "; " + decl.Type.Kind
+'					obj.Serialize( decl.Name, decl.Get( instance ) )
+'				End
 			End
 		End
 	Next
