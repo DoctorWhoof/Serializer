@@ -8,7 +8,7 @@ Namespace std.Json
 #Import "source/output"
 
 #Import "extensions/Color"
-#Import "extensions/Vec3f"
+#Import "extensions/Vector"
 #Import "extensions/Variant"
 
 Using std..
@@ -56,6 +56,13 @@ Class JsonObject Extension
 		End
 	End
 	
+'	Private?
+	'Allows serialization without setting a key. For internal use only.
+	Method Serialize( v:Variant )
+		Local value := Cast<JsonObject>( JsonValueFromVariant( v ) )
+		Merge( value )
+	End
+	
 	
 	Method Deserialize()
 		If Not Empty
@@ -88,13 +95,6 @@ Class JsonObject Extension
 				SetArray( k, value.ToArray() )
 			End
 		Next
-	End
-	
-	Private
-	'Allows serialization without setting a key. For internal use only.
-	Method Serialize( v:Variant )
-		Local value := Cast<JsonObject>( JsonValueFromVariant( v ) )
-		Merge( value )
 	End
 	
 End
